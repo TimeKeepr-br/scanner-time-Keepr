@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Keepr | Scanner de Alta Relojoaria</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --surface-color: #121212;
+            --gold-primary: #D4AF37;
+            --gold-secondary: #AA8C2C;
+            --text-main: #FFFFFF;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --font-stack: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-stack);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 {
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .highlight {
+            color: var(--gold-primary);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 5%;
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 4px;
+            color: var(--gold-primary);
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: var(--gold-primary);
+        }
+
+        main {
+            padding-top: 120px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hero {
+            text-align: center;
+            max-width: 800px;
+            margin-bottom: 4rem;
+            padding: 0 20px;
+            animation: fadeIn 1.5s ease-out;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .scanner-container {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #000;
+            aspect-ratio: 16/9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .scan-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .scan-frame {
+            width: 60%;
+            height: 60%;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            position: relative;
+        }
+
+        .scan-frame::before, .scan-frame::after,
+        .scan-frame span::before, .scan-frame span::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: var(--gold-primary);
+            border-style: solid;
+        }
+
+        .scan-frame::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+        .scan-frame::after { top: -2px; right: -2px; border-width: 2px 2px 0 0; }
+        .scan-frame span { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
+        .scan-frame span::before { bottom: -2px; left: -2px; border-width: 0 0 2px 2px; }
+        .scan-frame span::after { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+        .scanning-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background-color: var(--gold-primary);
+            box-shadow: 0 0 10px var(--gold-primary);
+            top: 0;
+            display: none;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        button {
+            background-color: transparent;
+            color: var(--gold-primary);
+            border: 1px solid var(--gold-primary);
+            padding: 12px 30px;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--gold-primary);
+            color: var(--bg-color);
+        }
+
+        button:disabled {
+            border-color: var(--border-color);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            background-color: transparent;
+        }
+
+        .result-panel {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(212, 175, 55, 0.05);
+            border-left: 4px solid var(--gold-primary);
+            display: none;
+            animation: slideUp 0.5s ease;
+        }
+
+        .result-panel h3 {
+            color: var(--gold-primary);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .result-data {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .result-img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: none;
+        }
+
+        .result-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .model-name {
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
+
+        .price {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes scanMove {
+            0% { top: 0; }
+            50% { top: 100%; }
+            100% { top: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">TIME KEEPR</div>
+        <nav>
+            <ul>
+                <li><a href="#">Catálogo</a></li>
+                <li><a href="#">Marcas</a></li>
+                <li><a href="#">Scanner AI</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="hero">
+            <h1>Inteligência <span class="highlight">Visual</span></h1>
+            <p>Aponte a câmera para qualquer modelo. O sistema identificará a peça e informará o valor de mercado em tempo real.</p>
+        </div>
+
+        <div class="scanner-container">
+            <div class="video-wrapper">
+                <video id="camera-feed" autoplay playsinline></video>
+                <div class="scan-overlay">
+                    <div class="scan-frame">
+                        <span></span>
+                        <div class="scanning-line" id="scan-line"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="btn-start">Ativar Câmera</button>
+                <button id="btn-scan" disabled>Analisar Relógio</button>
+            </div>
+
+            <div class="result-panel" id="result-panel">
+                <h3>Análise Concluída</h3>
+                <div class="result-data">
+                    <img id="watch-img" class="result-img" src="" alt="Imagem do Relógio">
+                    <div class="result-info">
+                        <span class="model-name" id="watch-model">Aguardando...</span>
+                        <span class="price highlight" id="watch-price">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const videoElement = document.getElementById('camera-feed');
+        const btnStart = document.getElementById('btn-start');
+        const btnScan = document.getElementById('btn-scan');
+        const scanLine = document.getElementById('scan-line');
+        const resultPanel = document.getElementById('result-panel');
+        const modelText = document.getElementById('watch-model');
+        const priceText = document.getElementById('watch-price');
+        const imgElement = document.getElementById('watch-img');
+
+        // Catálogo Oficial Time Keepr
+        const watchDatabase = [
+            { id: 1, name: "Winneg Automatico", price: 229.90, img: "https://ae01.alicdn.com/kf/S1af423da85dc435fb4445981c18f265ao.jpg", stock: 5, gender: 'M' },
+            { id: 2, name: "Forsining Master", price: 219.90, img: "https://i.ebayimg.com/images/g/xa8AAOSwI3hicfgd/s-l400.jpg", stock: 8, gender: 'M' },
+            { id: 3, name: "Binbond Horloge Black", price: 179.90, img: "https://http2.mlstatic.com/D_NQ_NP_845826-CBT94501229547_102025-O-relogio-masculino-suico-versatil-moderno-impermeavel-lum.webp", stock: 12, gender: 'M' },
+            { id: 4, name: "Binbond Horloge Silver", price: 169.90, img: "https://dcdn-us.mitiendanube.com/stores/006/876/038/products/binbond-8181-preto-prateado-638b5729dd4ab45db017639070883712-640-0.webp", stock: 6, gender: 'M' },
+            { id: 5, name: "Vandaguarda Diamond", price: 189.90, img: "https://dcdn-us.mitiendanube.com/stores/006/876/038/products/1000090205-deac669762d813351917630780190748-320-0.webp", stock: 4, gender: 'M' },
+            { id: 6, name: "OPK Quartz", price: 159.90, img: "https://dcdn-us.mitiendanube.com/stores/006/876/038/products/1000103090-9cffe9e594ce2e0e0117671061192121-320-0.webp", stock: 15, gender: 'M' },
+            { id: 7, name: "Curren Cobre", price: 159.90, img: "https://dcdn-us.mitiendanube.com/stores/006/876/038/products/1000090202-765070a7d714989b5417632183305158-320-0.webp", stock: 9, gender: 'M' },
+            { id: 8, name: "Oruss 1853 Classic", price: 129.90, img: "https://dcdn-us.mitiendanube.com/stores/006/876/038/products/inbound7295089341951479154-00b23894acbabdd52717614131309472-320-0.webp", stock: 7, gender: 'M' },
+            { id: 9, name: "Oruss 1853 Dark", price: 129.90, img: "https://dcdn-us.mitiendanube.com/stores/006/876/038/products/inbound2992636078921850236-1d12ce720b33e352f217614131541944-320-0.webp", stock: 11, gender: 'M' },
+            { id: 10, name: "Poedagar Deluxe Edition", price: 159.90, img: "https://sc04.alicdn.com/kf/H524f1ec4448f4603a83644e41a093c1eL.jpg", stock: 14, gender: 'M' },
+            { id: 101, name: "Geneve Aristocrat", price: 139.90, img: "https://http2.mlstatic.com/D_Q_NP_2X_880905-MLB108545007037_032026-P.webp", stock: 10, gender: 'M' },
+            { id: 102, name: "Poedagar Deluxe Edition", price: 129.90, img: "https://poedagareco.com/cdn/shop/files/deluxe-preto.webp?v=1769277973&width=700", stock: 10, gender: 'M' },
+            { id: 103, name: "Crrju Matrix 5018", price: 139.90, img: "https://http2.mlstatic.com/D_Q_NP_665008-MLB107600586966_032026-L.webp", stock: 10, gender: 'M' },
+            { id: 104, name: "Oceanic Precision", price: 129.90, img: "https://elitewatchess.com/cdn/shop/files/poedagar-luxury-man-quartz-watch-sport-military-watch-for-men-waterproof-luminous-date-chronograph-stainless-steel-mens-970silverblue-white-6708755068469-large.jpg?v=1730744319", stock: 10, gender: 'M' },
+            { id: 105, name: "Binbond Denton", price: 134.90, img: "https://http2.mlstatic.com/D_NQ_NP_971558-MLA91919254438_092025-O.webp", stock: 10, gender: 'M' },
+            { id: 106, name: "Curren Imperial", price: 159.90, img: "https://http2.mlstatic.com/D_NQ_NP_727192-MLB48161571217_112021-O.webp", stock: 8, gender: 'M' },
+            { id: 11, name: "Classic OPK", price: 179.90, img: "https://down-br.img.susercontent.com/file/br-11134207-7r98p-lmwtr0fa64ty24", stock: 3, gender: 'F' },
+            { id: 12, name: "Royal Rose Gold", price: 119.90, img: "https://down-br.img.susercontent.com/file/sg-11134301-7rast-mack7ohsh81v13", stock: 6, gender: 'F' },
+            { id: 13, name: "Chronos Black Edition", price: 99.90, img: "https://down-br.img.susercontent.com/file/sg-11134301-7rasp-macnoa7i6gyjff", stock: 20, gender: 'F' },
+            { id: 14, name: "Executive Gold", price: 139.90, img: "https://http2.mlstatic.com/D_Q_NP_789894-CBT87461640011_072025-O.webp", stock: 5, gender: 'F' },
+            { id: 15, name: "Minimalist Steel", price: 49.90, img: "https://a-static.mlcdn.com.br/%7Bw%7Dx%7Bh%7D/relogio-feminino-moda-pequena-arabe-relogios-de-quartzo-pulseira-de-couro-relogios-de-pulso-none/aliexpress/207225178/07f97f54c977bc9de18e9f3fb185c86a.jpeg", stock: 18, gender: 'F' },
+            { id: 16, name: "Phantom Carbon", price: 99.90, img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRgNhWcWuRZXGx2tloexYXq0dWWf_ys_hk3T5wlRs8hqrTrDMg5", stock: 10, gender: 'F' },
+            { id: 201, name: "Saint Germain chelsea Gold", price: 209.90, img: "https://acdn-us.mitiendanube.com/stores/001/116/055/products/dourado-32mm-b-frente-site1-c12a4dc3e8c4f1aeee16339562806579-640-0.webp", stock: 10, gender: 'F' },
+            { id: 202, name: "Saint Germain Harlem Silver", price: 169.90, img: "https://acdn-us.mitiendanube.com/stores/001/116/055/products/prata-32mm-b-frente-site1-c61b59639ae96d1dad16339564289314-640-0.webp", stock: 10, gender: 'F' }
+        ];
+
+        let streamAtivo = null;
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                
+                videoElement.srcObject = stream;
+                streamAtivo = stream;
+                
+                btnStart.textContent = "Câmera Ativa";
+                btnStart.disabled = true;
+                btnScan.disabled = false;
+                
+            } catch (err) {
+                console.error("Erro ao acessar câmera: ", err);
+                alert("Permissão de câmera negada ou dispositivo não encontrado.");
+            }
+        }
+
+        function scanWatch() {
+            if (!streamAtivo) return;
+
+            btnScan.disabled = true;
+            btnScan.textContent = "Processando IA...";
+            scanLine.style.display = "block";
+            scanLine.style.animation = "scanMove 1.5s ease-in-out infinite";
+            resultPanel.style.display = "none";
+            imgElement.style.display = "none";
+
+            setTimeout(() => {
+                scanLine.style.display = "none";
+                scanLine.style.animation = "none";
+                btnScan.textContent = "Analisar Novamente";
+                btnScan.disabled = false;
+
+                // Seleciona um modelo aleatório da sua lista
+                const randomIndex = Math.floor(Math.random() * watchDatabase.length);
+                const result = watchDatabase[randomIndex];
+
+                // Formata o preço para o padrão brasileiro (R$ 0,00)
+                const formattedPrice = result.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                // Atualiza a interface
+                modelText.textContent = result.name;
+                priceText.textContent = formattedPrice;
+                
+                // Atualiza e exibe a imagem
+                imgElement.src = result.img;
+                imgElement.style.display = "block";
+                
+                resultPanel.style.display = "block";
+
+            }, 2500);
+        }
+
+        btnStart.addEventListener('click', startCamera);
+        btnScan.addEventListener('click', scanWatch);
+    </script>
+</body>
+</html>
